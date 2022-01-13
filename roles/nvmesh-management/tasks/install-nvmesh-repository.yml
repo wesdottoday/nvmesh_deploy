@@ -1,13 +1,14 @@
 ---
 
-- name: Check if NVMesh repository is present
+- name: CentOS - Check if NVMesh repository is present
   stat:
     path: '/etc/yum.repos.d/nvmesh.repo'
   register: nvmesh_repo_stat
+  when: ansible_os_family == 'RedHat'
 
 # - debug: var=nvmesh_repo_stat
 
-- name: Create NVMesh installation repository
+- name: CentOS - Create NVMesh installation repository
   yum_repository:
     name: NVMesh
     description: Excelero NVMesh
@@ -17,4 +18,20 @@
     username: "{{ nvmesh_repo_username}}"
     password: "{{ nvmesh_repo_password }}"
     gpgcheck: yes
-  when: not nvmesh_repo_stat.stat.exists
+  when: (ansible_os_family == 'RedHat') and not (nvmesh_repo_stat.stat.exists)
+
+- name: Debian - Download NVMesh Management deb file
+  get_url:
+    url: "https://repo.excelero.com/nvmesh/2.4.1/ubuntu/20.04/x86_64/nvmesh-management_2.4.1-17.ubuntu2004_amd64.deb"
+    dest: "/tmp"
+    username: "{{ nvmesh_repo_username }}"
+    password: "{{ nvmesh_repo_password }}"
+  when: ansible_os_family == 'Debian'
+
+- name: Debian - Download NVMesh Utils deb file
+  get_url:
+    url: "https://repo.excelero.com/nvmesh/2.4.1/ubuntu/20.04/x86_64/nvmesh-utils_2.4.1-17.ubuntu2004_amd64.deb"
+    dest: "/tmp"
+    username: "{{ nvmesh_repo_username }}"
+    password: "{{ nvmesh_repo_password }}"
+  when: ansible_os_family == 'Debian'

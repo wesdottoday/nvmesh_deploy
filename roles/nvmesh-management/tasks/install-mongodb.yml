@@ -1,34 +1,59 @@
 ---
 
-- name: Install MongoDB repository
+- name: CentOS - Install MongoDB repository
   yum_repository:
-    name: mongodb-org-4.2
+    name: mongodb-org-4.4
     description: MongoDB Repository
-    file: mongodb-org-4.2
+    file: mongodb-org-4.4
     baseurl: "https://repo.mongodb.org/yum/redhat/$releasever/mongodb-org/4.2/x86_64/"
     gpgkey: "https://www.mongodb.org/static/pgp/server-4.2.asc"
     gpgcheck: yes
+  when: (ansible_os_family == 'RedHat')
 
+- name: Debian - Install MongoDB key
+  apt_key: 
+    url: "https://www.mongodb.org/static/pgp/server-4.2.asc"
+    state: present
+  when: (ansible_os_family == 'Debian')
+
+- name: Debian - Install MongoDB repo
+  apt_repository: repo='deb http://repo.mongodb.org/apt/ubuntu bionic/mongodb-org/4.2 multiverse' state=present  
+  when: (ansible_os_family == 'Debian')
+
+- name: Debian - update apt cache
+  apt:
+    update_cache: yes
+  when: (ansible_os_family == 'Debian')
 
 - name: Install MongoDB
   package:
-    name: mongodb-org
-    state: installed
+    name: 
+      - mongodb-org
+      - mongodb-org-shell
+      - mongodb-org-tools
+    state: present
 
 ######
 ## Install python-pymongo on RHEL/CentOS 7.x
 - name: Install python-pymongo 
   package:
     name: python-pymongo
-    state: installed  
-  when: ansible_distribution_version < "8.0"
+    state: present  
+  when: ansible_os_family == 'RedHat' and ansible_distribution_version < "8.0"
 
 ## Install python3-pymongo on RHEL/CentOS 8.x
 - name: Install python3-pymongo
   package:
     name: python3-pymongo
-    state: installed
-  when: ansible_distribution_version >= "8.0"
+    state: present
+  when: ansible_os_family == 'RedHat' and ansible_distribution_version >= "8.0"
+
+## Install python3-pymongo on RHEL/CentOS 8.x
+- name: Install python3-pymongo
+  package:
+    name: python3-pymongo
+    state: present
+  when: ansible_os_family == 'Debian'
 ######
 
 - name: Modify /etc/mongod.conf
@@ -36,15 +61,23 @@
     src: 'etc/mongod.conf'
     dest: /etc/mongod.conf
     mode: 0644
-    owner: root
-    group: root
+    owner: mongodb
+    group: mongodb
 
-- name: Ensure /var/lib/mongo belongs to mongod user
+- name: Make directory for mongo.pid
+  file:
+    path: /var/run/mongodb
+    state: directory
+    owner: mongodb
+    group: mongodb
+    mode: '0755'
+
+- name: Ensure /var/lib/mongo belongs to mongodb user
   file:
     path: /var/lib/mongo
     state: directory
-    owner: mongod
-    group: mongod
+    owner: mongodb
+    group: mongodb
     mode: '0755'
 
 - name: Enable and start mongodb
@@ -53,14 +86,14 @@
     state: started
     enabled: yes
 
-- name: "Ensure replica set {{ replica_set_name }} exists"
-  community.mongodb.mongodb_replicaset:
-    login_host: localhost
-    # login_user: admin
-    # login_password: admin
-    replica_set: "{{ replica_set_name }}"
-    members:
-      - "{{ groups.nvmesh_management[0] }}:27017"
-      - "{{ groups.nvmesh_management[1] }}:27017"
-      - "{{ groups.nvmesh_management[2] }}:27017"
-  when: groups.nvmesh_management.index(inventory_hostname) == 0
+# - name: Ensure replica set "{{ replica_set_name }}" exists
+#   community.mongodb.mongodb_replicaset:
+#     login_host: localhost
+#     # login_user: admin
+#     # login_password: admin
+#     replica_set: "{{ replica_set_name }}"
+#     members:
+#       - "{{ groups.nvmesh_management[0] }}:27017"
+#       - "{{ groups.nvmesh_management[1] }}:27017"
+#       - "{{ groups.nvmesh_management[2] }}:27017"
+#   when: groups.nvmesh_management.index(inventory_hostname) == 0

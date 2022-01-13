@@ -4,10 +4,23 @@
 - import_tasks: install-nodejs.yml
 - import_tasks: install-nvmesh-repository.yml
 
-- name: "Install NVMesh management"
+- name: "CentOS - Install NVMesh management"
   package:
-    name:
-      - nvmesh-management
+    name: nvmesh-management
+    state: present
+  when: ansible_os_family == 'RedHat'
+
+
+- name: "Debian - Install NVMesh Utils"
+  apt:
+    deb: /tmp/nvmesh-utils_2.4.1-17.ubuntu2004_amd64.deb
+  when: ansible_os_family == 'Debian'
+  
+- name: "Debian - Install NVMesh Management"
+  apt:
+    deb: /tmp/nvmesh-management_2.4.1-17.ubuntu2004_amd64.deb
+  when: ansible_os_family == 'Debian'
+
 
 # TBD - edit the installed config file instead of using templates
 - name: Modify /etc/nvmesh/management.js.conf

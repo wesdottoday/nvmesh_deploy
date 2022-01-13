@@ -3,8 +3,17 @@
 #      - ansible_facts['distribution'] == "CentOS"
 #      - ansible_facts['distribution_major_version'] == "6"
 
-- name: "Install NodeJS {{ node_version }} repository"
+- name: CentOS - Install NodeJS repository
   ansible.builtin.shell: curl --silent --location https://rpm.nodesource.com/setup_12.x | sudo -E bash -
+  args:
+    warn: no
+  when: ansible_os_family == 'RedHat'
+
+- name: Debian - Install NodeJS repository
+  ansible.builtin.shell: curl --silent --location https://deb.nodesource.com/setup_12.x | sudo -E bash -
+  args:
+    warn: no
+  when: ansible_os_family == 'Debian'
 
 # ## Note: migrate from curl to ansible module to avoid the following at run-time
 # [WARNING]: Consider using the get_url or uri module rather than running 'curl'.  If you need
@@ -13,5 +22,5 @@
 
 - name: "Install NodeJS"
   package:
-    name:
-      - nodejs
+    name: nodejs
+    state: present
